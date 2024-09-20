@@ -111,6 +111,7 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 func (p *AIPEProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewDataObjectResource,
+		NewDataObjectLinkResource,
 	}
 }
 
