@@ -122,9 +122,7 @@ func (p *AIPEProvider) DataSources(ctx context.Context) []func() datasource.Data
 }
 
 func (p *AIPEProvider) Functions(ctx context.Context) []func() function.Function {
-	return []func() function.Function{
-		NewExampleFunction,
-	}
+	return []func() function.Function{}
 }
 
 func New(version string) func() provider.Provider {
