@@ -7,8 +7,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Serviceware/terraform-provider-aipe/internal/aipe"
-	"github.com/Serviceware/terraform-provider-aipe/internal/authenticator"
+	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
+	"github.com/Serviceware/terraform-provider-swp/internal/authenticator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -39,7 +39,7 @@ type AIPEProviderModel struct {
 }
 
 func (p *AIPEProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "aipe"
+	resp.TypeName = "swp"
 	resp.Version = p.version
 }
 

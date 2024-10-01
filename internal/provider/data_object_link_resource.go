@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Serviceware/terraform-provider-aipe/internal/aipe"
+	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -86,7 +86,7 @@ func (r *DataObjectLinkResource) Configure(ctx context.Context, req resource.Con
 }
 
 func (d *DataObjectLinkResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_data_object_link"
+	resp.TypeName = req.ProviderTypeName + "_aipe_data_object_link"
 }
 
 func (d *DataObjectLinkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -144,15 +144,33 @@ func (d *DataObjectLinkResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
+	var stateTargetIDs = state.TargetIDs
+	var planTargetIDs = plan.TargetIDs
+
+	add, remove := diffStateAndPlanIDs(stateTargetIDs, planTargetIDs)
+
+	// Update the link in the AIPE API.
+	tflog.Info(ctx, "Updating link", map[string]interface{}{"add": add, "remove": remove})
+	err := d.client.UpdateDataObjectLinks(ctx, plan.SourceID.ValueString(), plan.LinkName.ValueString(), plan.RelationName.ValueString(), add, remove)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update link", err.Error())
+	}
+	state.TargetIDs = plan.TargetIDs
+
+	// Write the data to the response.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func diffStateAndPlanIDs(stateTargetIDs []string, planTargetIDs []string) ([]string, []string) {
 	var allIDs = make(map[string]bool)
 	var targetIDsInPlan = make(map[string]bool)
 	var targetIDsInState = make(map[string]bool)
 
-	for _, id := range state.TargetIDs {
+	for _, id := range stateTargetIDs {
 		allIDs[id] = true
 		targetIDsInState[id] = true
 	}
-	for _, id := range plan.TargetIDs {
+	for _, id := range planTargetIDs {
 		allIDs[id] = true
 		targetIDsInPlan[id] = true
 	}
@@ -169,17 +187,7 @@ func (d *DataObjectLinkResource) Update(ctx context.Context, req resource.Update
 			remove = append(remove, id)
 		}
 	}
-
-	// Update the link in the AIPE API.
-	tflog.Info(ctx, "Updating link", map[string]interface{}{"add": add, "remove": remove})
-	err := d.client.UpdateDataObjectLinks(ctx, plan.SourceID.ValueString(), plan.LinkName.ValueString(), plan.RelationName.ValueString(), add, remove)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to update link", err.Error())
-	}
-	state.TargetIDs = plan.TargetIDs
-
-	// Write the data to the response.
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	return add, remove
 }
 
 func (d *DataObjectLinkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

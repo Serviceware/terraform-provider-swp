@@ -1,4 +1,4 @@
-module github.com/Serviceware/terraform-provider-aipe
+module github.com/Serviceware/terraform-provider-swp
 
 go 1.21
 

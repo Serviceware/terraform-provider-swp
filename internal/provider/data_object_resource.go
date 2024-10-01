@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Serviceware/terraform-provider-aipe/internal/aipe"
+	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -39,7 +39,7 @@ type DataObjectResourceModel struct {
 }
 
 func (r *DataObjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_data_object"
+	resp.TypeName = req.ProviderTypeName + "_aipe_data_object"
 }
 
 func (r *DataObjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

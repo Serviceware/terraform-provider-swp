@@ -8,7 +8,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/Serviceware/terraform-provider-aipe/internal/provider"
+	"github.com/Serviceware/terraform-provider-swp/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/serviceware/aipe",
+		Address: "registry.terraform.io/serviceware/swp",
 		Debug:   debug,
 	}
 
