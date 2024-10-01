@@ -37,29 +37,33 @@ type DataObjectLinkResourceModel struct {
 
 func (d *DataObjectLinkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Link between two data objects",
+		MarkdownDescription: "Creates a link between two data objects",
 		Attributes: map[string]schema.Attribute{
 			"source_id": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				MarkdownDescription: "The system.id of the source object",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"link_name": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				MarkdownDescription: "The name of the link. This is the name of the link ('incident-causes'), not the name of the relation (of which a link has 2 - 'caused-by' or 'causes').",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"relation_name": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				MarkdownDescription: "The name of the relation. This is the 'end' of the link on the source objects side",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"target_ids": schema.ListAttribute{
-				ElementType: types.StringType,
-				Required:    true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "This is the list of target object IDs to link to",
+				Required:            true,
 			},
 		},
 	}

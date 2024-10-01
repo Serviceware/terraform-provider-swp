@@ -39,15 +39,17 @@ func (d *DataObjectDataSource) Metadata(ctx context.Context, req datasource.Meta
 func (d *DataObjectDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Example data source",
+		MarkdownDescription: "Retrieves a data object from the AIPE",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				MarkdownDescription: "The system.id of the data object",
 			},
 			"properties": schema.MapAttribute{
-				ElementType: types.StringType,
-				Computed:    true,
+				ElementType:         types.StringType,
+				Computed:            true,
+				MarkdownDescription: "The properties in the AIPE, as stringd",
 			},
 		},
 	}

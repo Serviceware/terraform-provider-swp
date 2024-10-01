@@ -45,20 +45,21 @@ func (r *DataObjectResource) Metadata(ctx context.Context, req resource.Metadata
 func (r *DataObjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Example resource",
+		MarkdownDescription: "Creates a data object in the AIPE",
 
 		Attributes: map[string]schema.Attribute{
 			"type": schema.StringAttribute{
-				MarkdownDescription: "Data Object Type",
+				MarkdownDescription: "The data type name ob the object. Must be the internal name (usually-in-lowecase-and-kebabxase)",
 				Required:            true,
 			},
 			"properties": schema.MapAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "The property values for the data object",
+				Optional:            true,
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Example identifier",
+				MarkdownDescription: "The system.id of the data object",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
