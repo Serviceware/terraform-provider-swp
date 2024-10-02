@@ -109,6 +109,7 @@ func (r *DataObjectResource) Create(ctx context.Context, req resource.CreateRequ
 	id, err := r.client.CreateObject(ctx, data.DataObjectType.ValueString(), data.Properties)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
+		return
 	}
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
