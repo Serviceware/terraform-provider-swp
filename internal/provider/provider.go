@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
 	"github.com/Serviceware/terraform-provider-swp/internal/authenticator"
@@ -20,7 +21,6 @@ import (
 
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
 var _ provider.Provider = &AIPEProvider{}
-var _ provider.ProviderWithFunctions = &AIPEProvider{}
 
 // AIPEProvider defines the provider implementation.
 type AIPEProvider struct {
@@ -48,21 +48,21 @@ func (p *AIPEProvider) Schema(ctx context.Context, req provider.SchemaRequest, r
 		Attributes: map[string]schema.Attribute{
 			"application_username": schema.StringAttribute{
 				MarkdownDescription: "Username for AIPE from user management",
-				Required:            true,
+				Optional:            true,
 			},
 			"application_password": schema.StringAttribute{
 				MarkdownDescription: "Password for AIPE from user management",
-				Required:            true,
+				Optional:            true,
 				Sensitive:           true,
 			},
 
 			"authenticator_realm_url": schema.StringAttribute{
 				MarkdownDescription: "URL of the Authenticatopr realm",
-				Required:            true,
+				Optional:            true,
 			},
 			"aipe_url": schema.StringAttribute{
 				MarkdownDescription: "URL of the AIPE",
-				Required:            true,
+				Optional:            true,
 			},
 		},
 	}
@@ -83,11 +83,52 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	// Example client configuration for data sources and resources
 	client := http.DefaultClient
 
+	applicationUsername := os.Getenv("SWP_APPLICATION_USER_USERNAME")
+	applicationPassword := os.Getenv("SWP_APPLICATION_USER_PASSWORD")
+	authenticatorRealmURL := os.Getenv("SWP_AUTHENTICATOR_URL")
+	aipeURL := os.Getenv("SWP_AIPE_URL")
+
+	if data.ApplicationUsername.ValueString() != "" {
+		applicationUsername = data.ApplicationUsername.ValueString()
+	}
+
+	if data.ApplicationPassword.ValueString() != "" {
+		applicationPassword = data.ApplicationPassword.ValueString()
+	}
+
+	if data.AuthenticatorRealmURL.ValueString() != "" {
+		authenticatorRealmURL = data.AuthenticatorRealmURL.ValueString()
+	}
+
+	if data.AIPEURL.ValueString() != "" {
+		aipeURL = data.AIPEURL.ValueString()
+	}
+
+	if applicationUsername == "" {
+		resp.Diagnostics.AddError("application_username", "application_username is required")
+	}
+
+	if applicationPassword == "" {
+		resp.Diagnostics.AddError("application_password", "application_password is required")
+	}
+
+	if authenticatorRealmURL == "" {
+		resp.Diagnostics.AddError("authenticator_realm_url", "authenticator_realm_url is required")
+	}
+
+	if aipeURL == "" {
+		resp.Diagnostics.AddError("aipe_url", "aipe_url is required")
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	authenticatorClient := authenticator.AuthenticatorClient{
 		Client:              client,
-		ApplicationUsername: data.ApplicationUsername.ValueString(),
-		ApplicationPassword: data.ApplicationPassword.ValueString(),
-		URL:                 data.AuthenticatorRealmURL.ValueString(),
+		ApplicationUsername: applicationUsername,
+		ApplicationPassword: applicationPassword,
+		URL:                 authenticatorRealmURL,
 	}
 
 	token, err := authenticatorClient.Authenticate(ctx)
@@ -99,7 +140,7 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 
 	aipeClient := aipe.AIPEClient{
 		HTTPClient: client,
-		URL:        data.AIPEURL.ValueString(),
+		URL:        aipeURL,
 		OIDCToken:  token,
 	}
 
