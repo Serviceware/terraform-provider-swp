@@ -1,9 +1,13 @@
 package provider
 
 import (
+	"context"
+	"net/http"
 	"os"
 	"testing"
 
+	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
+	"github.com/Serviceware/terraform-provider-swp/internal/authenticator"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 )
@@ -11,6 +15,8 @@ import (
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 	"swp": providerserver.NewProtocol6WithError(New("test")()),
 }
+
+var aipeClient aipe.AIPEClient
 
 var requiredEnvironmentVariables = []string{
 	"SWP_APPLICATION_USER_USERNAME",
@@ -24,5 +30,25 @@ func testAccPreCheck(t *testing.T) {
 		if os.Getenv(envVar) == "" {
 			t.Fatalf("Environment variable %s must be set for acceptance tests", envVar)
 		}
+	}
+
+	client := http.DefaultClient
+	ctx := context.Background()
+	authenticatorClient := authenticator.AuthenticatorClient{
+		Client:              client,
+		ApplicationUsername: os.Getenv("SWP_APPLICATION_USER_USERNAME"),
+		ApplicationPassword: os.Getenv("SWP_APPLICATION_USER_PASSWORD"),
+		URL:                 os.Getenv("SWP_AUTHENTICATOR_URL"),
+	}
+
+	token, err := authenticatorClient.Authenticate(ctx)
+	if err != nil {
+		t.Fatalf("Failed to authenticate: %s", err)
+	}
+
+	aipeClient = aipe.AIPEClient{
+		HTTPClient: client,
+		URL:        os.Getenv("SWP_AIPE_URL"),
+		OIDCToken:  token,
 	}
 }

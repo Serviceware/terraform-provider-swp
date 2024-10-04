@@ -140,7 +140,11 @@ func (r *DataObjectResource) Read(ctx context.Context, req resource.ReadRequest,
 	tflog.Info(ctx, "Reading data source", map[string]interface{}{"id": data.Id.ValueString()})
 	object, err := r.client.GetObject(ctx, data.Id.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
+		if aipe.ErrorIs404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read data source, got error: %s", err))
 		return
 	}
 	tflog.Info(ctx, "Successfully read data source", map[string]interface{}{"object": object, "error": err})
@@ -210,6 +214,9 @@ func (r *DataObjectResource) Delete(ctx context.Context, req resource.DeleteRequ
 	tflog.Info(ctx, "Deleting data source", map[string]interface{}{"id": data.Id.ValueString()})
 	err := r.client.DeleteObject(ctx, data.Id.ValueString())
 	if err != nil {
+		if aipe.ErrorIs404(err) {
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	}
 }

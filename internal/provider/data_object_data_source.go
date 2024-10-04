@@ -96,6 +96,10 @@ func (d *DataObjectDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	tflog.Info(ctx, "Reading data source")
 	object, err := d.client.GetObject(ctx, data.Id.ValueString())
 	if err != nil {
+		if aipe.ErrorIs404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 		return
 	}

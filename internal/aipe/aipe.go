@@ -50,7 +50,7 @@ func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]strin
 
 	if resp.StatusCode != http.StatusOK {
 		tflog.Info(ctx, "get object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL})
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -58,7 +58,7 @@ func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]strin
 		return nil, err
 	}
 
-	tflog.Info(ctx, "Successfully retrieved object", map[string]interface{}{"bytes": bodyBytes})
+	tflog.Info(ctx, "Successfully retrieved object", map[string]interface{}{"bytes": string(bodyBytes)})
 
 	var object ObjectAPIResponse
 	json.Unmarshal(bodyBytes, &object)
@@ -96,6 +96,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
 	req.Header.Set("Content-Type", "application/json")
 
+	tflog.Info(ctx, "creating object", map[string]interface{}{"objectType": objectType})
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return "", err
@@ -107,7 +108,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 		respData, _ := io.ReadAll(resp.Body)
 		blub := base64.StdEncoding.EncodeToString(respData)
 		tflog.Info(ctx, "create object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": blub})
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 	}
 
 	respData, err := io.ReadAll(resp.Body)
@@ -115,7 +116,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 		return "", err
 	}
 
-	tflog.Info(ctx, "Successfully created object", map[string]interface{}{"objectType": objectType, "data": data, "response": respData})
+	tflog.Info(ctx, "Successfully created object", map[string]interface{}{"objectType": objectType, "data": data, "response": string(respData)})
 
 	var createResponse ObjectCreateResponse
 	err = json.Unmarshal(respData, &createResponse)
@@ -149,6 +150,7 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
 	req.Header.Set("Content-Type", "application/json")
 
+	tflog.Info(ctx, "updating object", map[string]interface{}{"id": id})
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return err
@@ -158,9 +160,8 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 
 	if resp.StatusCode != http.StatusOK {
 		respData, _ := io.ReadAll(resp.Body)
-		blub := base64.StdEncoding.EncodeToString(respData)
-		tflog.Info(ctx, "update object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": blub})
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		tflog.Info(ctx, "update object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": string(respData)})
+		return &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 	}
 
 	tflog.Info(ctx, "Successfully updated object", map[string]interface{}{"id": id, "data": data})
@@ -178,6 +179,7 @@ func (c *AIPEClient) DeleteObject(ctx context.Context, id string) error {
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
 
+	tflog.Info(ctx, "deleting object", map[string]interface{}{"id": id})
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return err
@@ -187,9 +189,8 @@ func (c *AIPEClient) DeleteObject(ctx context.Context, id string) error {
 
 	if resp.StatusCode != http.StatusNoContent {
 		respData, _ := io.ReadAll(resp.Body)
-		blub := base64.StdEncoding.EncodeToString(respData)
-		tflog.Info(ctx, "delete object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": blub})
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		tflog.Info(ctx, "delete object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": string(respData)})
+		return &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 	}
 
 	tflog.Info(ctx, "Successfully deleted object", map[string]interface{}{"id": id})

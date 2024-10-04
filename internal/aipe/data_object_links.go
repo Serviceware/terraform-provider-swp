@@ -43,7 +43,7 @@ func (c *AIPEClient) GetDataObjectLinks(ctx context.Context, id string, linkName
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+			return nil, &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 		}
 
 		bodyBytes, err := io.ReadAll(resp.Body)
@@ -111,7 +111,7 @@ func (c *AIPEClient) UpdateDataObjectLinks(ctx context.Context, id string, linkN
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 	}
 
 	return nil
