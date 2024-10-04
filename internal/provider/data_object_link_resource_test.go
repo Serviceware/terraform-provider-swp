@@ -1,8 +1,12 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 var idDiffTests = []struct {
@@ -91,5 +95,97 @@ func TestDiffStateAndPlanIDs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestAccAIPEDataObjectLinkHappyCase(t *testing.T) {
+	var db01 = &DataObject{}
+	var db02 = &DataObject{}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataObjectLinkSimple(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataObjectIDFetch("swp_aipe_data_object.db01", db01),
+					testAccDataObjectIDFetch("swp_aipe_data_object.db02", db02),
+					testAccDataObjectHasLinks(db01.ID, linkNameFromAIPE, relationNameFromAIPE, []string{db01.ID, db02.ID}),
+				),
+			},
+		},
+	})
+}
+
+var serverObjectTypeFromAIPE = "server"
+var hosterObjectTypeFromAIPE = "hoster"
+var linkNameFromAIPE = "server-hosted-by-hoster"
+var relationNameFromAIPE = "hosts"
+
+func testAccDataObjectLinkSimple() string {
+	return fmt.Sprintf(`
+resource "swp_aipe_data_object" "db01" {
+	type = "%s"
+	properties = {
+		"fqdn" = "db01"
+	}
+}
+
+resource "swp_aipe_data_object" "db02" {
+	type = "%s"
+	properties = {
+		"fqdn" = "db02"
+	}
+}
+
+resource "swp_aipe_data_object" "cloud_inc" {
+	type = "%s"
+	properties = {
+		"support-portal" = "https://support.cloud-inc.example"
+	}
+}
+
+resource "swp_aipe_data_object_link" "cloud-inc-hosting-both-dbs" {
+	source_id = swp_aipe_data_object.cloud_inc.id
+
+	link_name = "%s"
+	relation_name = "%s"
+
+	target_ids = [
+		swp_aipe_data_object.db01.id,
+		swp_aipe_data_object.db02.id,
+	]
+}
+	`,
+		serverObjectTypeFromAIPE,
+		serverObjectTypeFromAIPE,
+		hosterObjectTypeFromAIPE,
+		linkNameFromAIPE,
+		relationNameFromAIPE)
+}
+
+func testAccDataObjectHasLinks(objectId string, linkName string, relationName string, expectedIds []string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ids, err := aipeClient.GetDataObjectLinks(context.Background(), objectId, linkName, relationName)
+		if err != nil {
+			return err
+		}
+
+		if len(ids) != len(expectedIds) {
+			return fmt.Errorf("expected %d ids, got %d", len(expectedIds), len(ids))
+		}
+
+		var expectedIdsAsMap = make(map[string]bool)
+		for _, id := range expectedIds {
+			expectedIdsAsMap[id] = true
+		}
+
+		for _, id := range ids {
+			if !expectedIdsAsMap[id] {
+				return fmt.Errorf("expected %s to be in ids", id)
+			}
+		}
+		return nil
 	}
 }
