@@ -46,6 +46,7 @@ func (c *AIPEClient) GetDataObjectLinks(ctx context.Context, id string, linkName
 			return nil, &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
 		}
 
+		tflog.Info(ctx, "Reading object links", map[string]interface{}{"url": objectURL})
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err

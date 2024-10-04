@@ -210,5 +210,4 @@ func (d *DataObjectLinkResource) Delete(ctx context.Context, req resource.Delete
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to delete link", err.Error())
 	}
-	panic("unimplemented")
 }

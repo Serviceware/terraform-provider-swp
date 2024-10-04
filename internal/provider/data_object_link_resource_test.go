@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -101,6 +102,7 @@ func TestDiffStateAndPlanIDs(t *testing.T) {
 func TestAccAIPEDataObjectLinkHappyCase(t *testing.T) {
 	var db01 = &DataObject{}
 	var db02 = &DataObject{}
+	var cloudInc = &DataObject{}
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -111,7 +113,8 @@ func TestAccAIPEDataObjectLinkHappyCase(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataObjectIDFetch("swp_aipe_data_object.db01", db01),
 					testAccDataObjectIDFetch("swp_aipe_data_object.db02", db02),
-					testAccDataObjectHasLinks(db01.ID, linkNameFromAIPE, relationNameFromAIPE, []string{db01.ID, db02.ID}),
+					testAccDataObjectIDFetch("swp_aipe_data_object.cloud_inc", cloudInc),
+					testAccDataObjectHasLinks(cloudInc, linkNameFromAIPE, relationNameFromAIPE, []*DataObject{db01, db02}),
 				),
 			},
 		},
@@ -165,20 +168,20 @@ resource "swp_aipe_data_object_link" "cloud-inc-hosting-both-dbs" {
 		relationNameFromAIPE)
 }
 
-func testAccDataObjectHasLinks(objectId string, linkName string, relationName string, expectedIds []string) resource.TestCheckFunc {
+func testAccDataObjectHasLinks(source *DataObject, linkName string, relationName string, expectedLinks []*DataObject) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		ids, err := aipeClient.GetDataObjectLinks(context.Background(), objectId, linkName, relationName)
+		ids, err := aipeClient.GetDataObjectLinks(context.Background(), source.ID, linkName, relationName)
 		if err != nil {
 			return err
 		}
 
-		if len(ids) != len(expectedIds) {
-			return fmt.Errorf("expected %d ids, got %d", len(expectedIds), len(ids))
+		if len(ids) != len(expectedLinks) {
+			return fmt.Errorf("expected %d ids, got %d", len(expectedLinks), len(ids))
 		}
 
 		var expectedIdsAsMap = make(map[string]bool)
-		for _, id := range expectedIds {
-			expectedIdsAsMap[id] = true
+		for _, link := range expectedLinks {
+			expectedIdsAsMap[link.ID] = true
 		}
 
 		for _, id := range ids {
