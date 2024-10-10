@@ -24,11 +24,13 @@ type GetDataObjectLinksResponse struct {
 func (c *AIPEClient) GetDataObjectLinks(ctx context.Context, id string, linkName string, relationName string) ([]string, error) {
 	var objectIDs []string = nil
 	totalElements := 1
+	page := 0
 
 	for len(objectIDs) < totalElements {
 
 		// Make a request to the AIPE API to get the object with the specified ID.
-		objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s/links?linkDefinitionName=%s&relationName=%s", c.URL, id, linkName, relationName)
+		objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s/links?linkDefinitionName=%s&relationName=%s&page=%d", c.URL, id, linkName, relationName, page)
+		page++
 
 		req, err := http.NewRequestWithContext(ctx, "GET", objectURL, nil)
 		if err != nil {
