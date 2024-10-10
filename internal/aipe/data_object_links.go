@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -64,6 +65,7 @@ func (c *AIPEClient) GetDataObjectLinks(ctx context.Context, id string, linkName
 		}
 	}
 
+	slices.Sort(objectIDs)
 	return objectIDs, nil
 }
 
