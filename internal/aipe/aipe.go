@@ -24,7 +24,7 @@ type AIPEClient struct {
 }
 
 type ObjectAPIResponse struct {
-	DataObject map[string]string `json:"dataObject"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]string, error) {
@@ -63,12 +63,12 @@ func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]strin
 	var object ObjectAPIResponse
 	json.Unmarshal(bodyBytes, &object)
 	delete(object.DataObject, "system")
-	return object.DataObject, nil
+	return convertPropertiesToString(object.DataObject), nil
 }
 
 type ObjectCreateRequest struct {
-	Type       string            `json:"typeName"`
-	DataObject map[string]string `json:"dataObject"`
+	Type       string                 `json:"typeName"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 type ObjectCreateResponse struct {
@@ -82,7 +82,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 
 	requestObject := ObjectCreateRequest{
 		Type:       objectType,
-		DataObject: data,
+		DataObject: convertPropertiesFromString(data),
 	}
 	body, err := json.Marshal(requestObject)
 	if err != nil {
@@ -128,7 +128,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 }
 
 type ObjectUpdateRequest struct {
-	DataObject map[string]string `json:"dataObject"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[string]string) error {
@@ -136,7 +136,7 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 	objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s", c.URL, id)
 
 	requestObject := ObjectUpdateRequest{
-		DataObject: data,
+		DataObject: convertPropertiesFromString(data),
 	}
 	body, err := json.Marshal(requestObject)
 	if err != nil {
