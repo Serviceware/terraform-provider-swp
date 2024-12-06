@@ -103,12 +103,16 @@ func (d *DataObjectLinkResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// Create the link in the AIPE API.
-	tflog.Info(ctx, "Creating link", map[string]interface{}{"data": data.SourceID.ValueString()})
-	err := d.client.UpdateDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString(), data.TargetIDs, nil)
-
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to create link", err.Error())
+	tflog.Info(ctx, "Target IDs", map[string]interface{}{"target_ids": data.TargetIDs})
+	if len(data.TargetIDs) > 0 {
+		// Create the link in the AIPE API.
+		tflog.Info(ctx, "Creating link", map[string]interface{}{"data": data.SourceID.ValueString()})
+		err := d.client.UpdateDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString(), data.TargetIDs, nil)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to create link", err.Error())
+		}
+	} else {
+		tflog.Info(ctx, "No link to create", map[string]interface{}{"data": data.SourceID.ValueString()})
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -154,10 +158,14 @@ func (d *DataObjectLinkResource) Update(ctx context.Context, req resource.Update
 	add, remove := diffStateAndPlanIDs(stateTargetIDs, planTargetIDs)
 
 	// Update the link in the AIPE API.
-	tflog.Info(ctx, "Updating link", map[string]interface{}{"add": add, "remove": remove})
-	err := d.client.UpdateDataObjectLinks(ctx, plan.SourceID.ValueString(), plan.LinkName.ValueString(), plan.RelationName.ValueString(), add, remove)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to update link", err.Error())
+	if len(add) == 0 && len(remove) == 0 {
+		tflog.Info(ctx, "No changes to link", map[string]interface{}{"data": plan.SourceID.ValueString()})
+	} else {
+		tflog.Info(ctx, "Updating link", map[string]interface{}{"add": add, "remove": remove})
+		err := d.client.UpdateDataObjectLinks(ctx, plan.SourceID.ValueString(), plan.LinkName.ValueString(), plan.RelationName.ValueString(), add, remove)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to update link", err.Error())
+		}
 	}
 	state.TargetIDs = plan.TargetIDs
 
@@ -203,11 +211,14 @@ func (d *DataObjectLinkResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	// Delete the link in the AIPE API.
-	tflog.Info(ctx, "Deleting link", map[string]interface{}{"data": data.SourceID.ValueString()})
-	err := d.client.UpdateDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString(), nil, data.TargetIDs)
-
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to delete link", err.Error())
+	if len(data.TargetIDs) > 0 {
+		// Delete the link in the AIPE API.
+		tflog.Info(ctx, "Deleting link", map[string]interface{}{"data": data.SourceID.ValueString()})
+		err := d.client.UpdateDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString(), nil, data.TargetIDs)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to delete link", err.Error())
+		}
+	} else {
+		tflog.Info(ctx, "No link to delete", map[string]interface{}{"data": data.SourceID.ValueString()})
 	}
 }
