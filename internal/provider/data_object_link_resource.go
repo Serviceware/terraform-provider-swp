@@ -60,7 +60,7 @@ func (d *DataObjectLinkResource) Schema(ctx context.Context, req resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"target_ids": schema.ListAttribute{
+			"target_ids": schema.SetAttribute{
 				ElementType:         types.StringType,
 				MarkdownDescription: "This is the list of target object IDs to link to",
 				Required:            true,
