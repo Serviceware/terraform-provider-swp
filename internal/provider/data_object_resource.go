@@ -152,7 +152,15 @@ func (r *DataObjectResource) Read(ctx context.Context, req resource.ReadRequest,
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
 	//data.Id = types.StringValue("example-id")
-	data.Properties = object
+	tflog.Debug(ctx, "Properties", map[string]interface{}{"properties": data.Properties})
+
+	// We only copy the properties the user cares about into our resource.
+	// This enables partial object management.
+	for k := range data.Properties {
+		if v, ok := object[k]; ok {
+			data.Properties[k] = v
+		}
+	}
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
