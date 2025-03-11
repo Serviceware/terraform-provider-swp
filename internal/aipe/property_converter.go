@@ -19,6 +19,10 @@ func convertPropertiesFromString(properties map[string]string) map[string]interf
 func convertPropertiesToString(properties map[string]interface{}) map[string]string {
 	result := make(map[string]string)
 	for k, v := range properties {
+		if v == nil {
+			continue
+		}
+
 		if b, ok := v.(bool); ok {
 			result[k] = fmt.Sprintf("%t", b)
 		} else {
