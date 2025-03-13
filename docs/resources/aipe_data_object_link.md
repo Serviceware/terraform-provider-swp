@@ -51,4 +51,4 @@ resource "swp_aipe_data_object_link" "server_is_hosted" {
 - `link_name` (String) The name of the link. This is the name of the link ('incident-causes'), not the name of the relation (of which a link has 2 - 'caused-by' or 'causes').
 - `relation_name` (String) The name of the relation. This is the 'end' of the link on the source objects side
 - `source_id` (String) The system.id of the source object
-- `target_ids` (List of String) This is the list of target object IDs to link to
+- `target_ids` (Set of String) This is the list of target object IDs to link to
