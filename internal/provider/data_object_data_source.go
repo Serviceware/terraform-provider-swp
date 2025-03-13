@@ -21,12 +21,10 @@ func NewDataObjectDataSource() datasource.DataSource {
 	return &DataObjectDataSource{}
 }
 
-// DataObjectDataSource defines the data source implementation.
 type DataObjectDataSource struct {
 	client *aipe.AIPEClient
 }
 
-// DataObjectDataSourceModel describes the data source data model.
 type DataObjectDataSourceModel struct {
 	Id         types.String      `tfsdk:"id"`
 	Properties map[string]string `tfsdk:"properties"`
@@ -38,7 +36,6 @@ func (d *DataObjectDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *DataObjectDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Retrieves a data object from the AIPE",
 
 		Attributes: map[string]schema.Attribute{
@@ -56,7 +53,6 @@ func (d *DataObjectDataSource) Schema(ctx context.Context, req datasource.Schema
 }
 
 func (d *DataObjectDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -78,20 +74,11 @@ func (d *DataObjectDataSource) Configure(ctx context.Context, req datasource.Con
 func (d *DataObjectDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data DataObjectDataSourceModel
 
-	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := d.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
 
 	tflog.Info(ctx, "Reading data source")
 	object, err := d.client.GetObject(ctx, data.Id.ValueString())
@@ -105,15 +92,9 @@ func (d *DataObjectDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	}
 	tflog.Info(ctx, "Successfully read data source", map[string]interface{}{"object": object, "error": err})
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
-	//data.Id = types.StringValue("example-id")
 	data.Properties = object
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
 	tflog.Trace(ctx, "read a data source")
 
-	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

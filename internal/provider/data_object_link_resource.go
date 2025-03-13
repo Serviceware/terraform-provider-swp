@@ -70,7 +70,6 @@ func (d *DataObjectLinkResource) Schema(ctx context.Context, req resource.Schema
 }
 
 func (r *DataObjectLinkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -96,7 +95,6 @@ func (d *DataObjectLinkResource) Metadata(ctx context.Context, req resource.Meta
 func (d *DataObjectLinkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data DataObjectLinkResourceModel
 
-	// Read the data from the request.
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -121,14 +119,12 @@ func (d *DataObjectLinkResource) Create(ctx context.Context, req resource.Create
 func (d *DataObjectLinkResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data DataObjectLinkResourceModel
 
-	// Read the data from the AIPE API.
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get the link data from the AIPE API.
 	linkData, err := d.client.GetDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to get link data", err.Error())
@@ -137,7 +133,6 @@ func (d *DataObjectLinkResource) Read(ctx context.Context, req resource.ReadRequ
 
 	data.TargetIDs = linkData
 
-	// Write the data to the response.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -157,7 +152,6 @@ func (d *DataObjectLinkResource) Update(ctx context.Context, req resource.Update
 
 	add, remove := diffStateAndPlanIDs(stateTargetIDs, planTargetIDs)
 
-	// Update the link in the AIPE API.
 	if len(add) == 0 && len(remove) == 0 {
 		tflog.Info(ctx, "No changes to link", map[string]interface{}{"data": plan.SourceID.ValueString()})
 	} else {
@@ -169,7 +163,6 @@ func (d *DataObjectLinkResource) Update(ctx context.Context, req resource.Update
 	}
 	state.TargetIDs = plan.TargetIDs
 
-	// Write the data to the response.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -205,14 +198,12 @@ func diffStateAndPlanIDs(stateTargetIDs []string, planTargetIDs []string) ([]str
 func (d *DataObjectLinkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data DataObjectLinkResourceModel
 
-	// Read the data from the request.
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if len(data.TargetIDs) > 0 {
-		// Delete the link in the AIPE API.
 		tflog.Info(ctx, "Deleting link", map[string]interface{}{"data": data.SourceID.ValueString()})
 		err := d.client.UpdateDataObjectLinks(ctx, data.SourceID.ValueString(), data.LinkName.ValueString(), data.RelationName.ValueString(), nil, data.TargetIDs)
 		if err != nil {

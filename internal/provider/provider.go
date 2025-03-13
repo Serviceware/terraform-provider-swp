@@ -22,15 +22,10 @@ import (
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
 var _ provider.Provider = &AIPEProvider{}
 
-// AIPEProvider defines the provider implementation.
 type AIPEProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
-	// testing.
 	version string
 }
 
-// ScaffoldingProviderModel describes the provider data model.
 type AIPEProviderModel struct {
 	ApplicationUsername   types.String `tfsdk:"application_username"`
 	ApplicationPassword   types.String `tfsdk:"application_password"`
@@ -77,10 +72,6 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
-
-	// Example client configuration for data sources and resources
 	client := http.DefaultClient
 
 	applicationUsername := os.Getenv("SWP_APPLICATION_USER_USERNAME")
