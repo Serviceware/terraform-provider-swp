@@ -115,7 +115,7 @@ func (c *AIPEClient) UpdateDataObjectLinks(ctx context.Context, id string, linkN
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		responseBody, _ := io.ReadAll(resp.Body)
 		tflog.Info(ctx, "update object links failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "response": string(responseBody)})
 		return &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
