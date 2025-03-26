@@ -1,3 +1,12 @@
+
+## 0.1.3
+
+FIXES:
+
+- An `swp_data_link_object`, which generates zero links, is now in sync if there are
+  no links in the AIPE. Previously this was showing up as a diff due to the difference
+  between `null` and and empty set.
+
 ## 0.1.0
 
 FEATURES:
