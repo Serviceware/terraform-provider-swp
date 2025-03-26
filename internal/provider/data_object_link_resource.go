@@ -131,7 +131,11 @@ func (d *DataObjectLinkResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	data.TargetIDs = linkData
+	if linkData == nil {
+		data.TargetIDs = []string{}
+	} else {
+		data.TargetIDs = linkData
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
