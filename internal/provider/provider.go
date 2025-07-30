@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Serviceware/terraform-provider-swp/internal/aipe"
 	"github.com/Serviceware/terraform-provider-swp/internal/authenticator"
@@ -72,7 +73,9 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	client := http.DefaultClient
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 
 	applicationUsername := os.Getenv("SWP_APPLICATION_USER_USERNAME")
 	applicationPassword := os.Getenv("SWP_APPLICATION_USER_PASSWORD")
