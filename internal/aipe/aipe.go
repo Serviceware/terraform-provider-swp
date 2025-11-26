@@ -24,12 +24,12 @@ type AIPEClient struct {
 	Authenticator *authenticator.AuthenticatorClient
 }
 
-// GetOIDCToken retrieves the OIDC token used to authenticate with the AIPE API.
 func (c *AIPEClient) GetOIDCToken(ctx context.Context) (string, error) {
-	if c.Authenticator == nil {
-		return "", fmt.Errorf("Authenticator client not configured")
+	token, err := c.Authenticator.Authenticate(ctx)
+	if err != nil {
+		return "", err
 	}
-	return c.Authenticator.Authenticate(ctx)
+	return token, nil
 }
 
 type ObjectAPIResponse struct {
@@ -38,7 +38,6 @@ type ObjectAPIResponse struct {
 
 func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]string, error) {
 	// Make a request to the AIPE API to get the object with the specified ID.
-
 	objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s", c.URL, id)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", objectURL, nil)

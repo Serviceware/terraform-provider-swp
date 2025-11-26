@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -19,9 +21,20 @@ type AuthenticatorClient struct {
 	ApplicationPassword string
 
 	URL string
+
+	Token      string
+	TokenMutex sync.Mutex
 }
 
-func (c AuthenticatorClient) Authenticate(ctx context.Context) (string, error) {
+func (c *AuthenticatorClient) Authenticate(ctx context.Context) (string, error) {
+	c.TokenMutex.Lock()
+	defer c.TokenMutex.Unlock()
+
+	// Only return cached token if it is valid for at least 5 seconds
+	if c.Token != "" && IsValidIn(c.Token, 5*time.Second) {
+		return c.Token, nil
+	}
+
 	tokenUrl := fmt.Sprintf("%s/protocol/openid-connect/token", c.URL)
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
@@ -59,5 +72,6 @@ func (c AuthenticatorClient) Authenticate(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return tokenResponse.AccessToken, nil
+	c.Token = tokenResponse.AccessToken
+	return c.Token, nil
 }
