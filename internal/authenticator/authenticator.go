@@ -26,6 +26,7 @@ func (c AuthenticatorClient) Authenticate(ctx context.Context) (string, error) {
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
 	req, err := http.NewRequestWithContext(ctx, "POST", tokenUrl, strings.NewReader(form.Encode()))
+	tflog.Info(ctx, "creating request", map[string]interface{}{"url": tokenUrl, "err": err})
 
 	if err != nil {
 		return "", err

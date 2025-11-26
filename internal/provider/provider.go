@@ -125,17 +125,10 @@ func (p *AIPEProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		URL:                 authenticatorRealmURL,
 	}
 
-	token, err := authenticatorClient.Authenticate(ctx)
-
-	if err != nil {
-		resp.Diagnostics.AddError("authenticator", "failed to authenticate: "+err.Error())
-		return
-	}
-
 	aipeClient := aipe.AIPEClient{
-		HTTPClient: client,
-		URL:        aipeURL,
-		OIDCToken:  token,
+		HTTPClient:    client,
+		URL:           aipeURL,
+		Authenticator: &authenticatorClient,
 	}
 
 	tflog.Info(ctx, "Successfully configured AIPE provider")
