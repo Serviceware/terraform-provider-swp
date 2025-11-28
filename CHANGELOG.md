@@ -1,4 +1,12 @@
 
+## 0.2.0
+
+IMPROVEMENTS:
+
+- The OIDC Token is now refreshed whenever it is close to expiry. This ensures apply's
+  which run longer than the normal token lifetime (5min usually) are authenticated the
+  entire time.
+
 ## 0.1.3
 
 FIXES:
