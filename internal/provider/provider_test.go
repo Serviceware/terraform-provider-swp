@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"testing"
@@ -33,7 +32,6 @@ func testAccPreCheck(t *testing.T) {
 	}
 
 	client := http.DefaultClient
-	ctx := context.Background()
 	authenticatorClient := authenticator.AuthenticatorClient{
 		Client:              client,
 		ApplicationUsername: os.Getenv("SWP_APPLICATION_USER_USERNAME"),
@@ -41,14 +39,9 @@ func testAccPreCheck(t *testing.T) {
 		URL:                 os.Getenv("SWP_AUTHENTICATOR_URL"),
 	}
 
-	token, err := authenticatorClient.Authenticate(ctx)
-	if err != nil {
-		t.Fatalf("Failed to authenticate: %s", err)
-	}
-
 	aipeClient = aipe.AIPEClient{
-		HTTPClient: client,
-		URL:        os.Getenv("SWP_AIPE_URL"),
-		OIDCToken:  token,
+		HTTPClient:    client,
+		URL:           os.Getenv("SWP_AIPE_URL"),
+		Authenticator: &authenticatorClient,
 	}
 }
