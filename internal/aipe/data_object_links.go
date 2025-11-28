@@ -36,7 +36,11 @@ func (c *AIPEClient) GetDataObjectLinks(ctx context.Context, id string, linkName
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+		token, err := c.GetOIDCToken(ctx)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		resp, err := c.HTTPClient.Do(req)
 		if err != nil {
@@ -105,7 +109,11 @@ func (c *AIPEClient) UpdateDataObjectLinks(ctx context.Context, id string, linkN
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+	token, err := c.GetOIDCToken(ctx)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Set("Content-Type", "application/json")
 
 	tflog.Info(ctx, "Sending request to AIPE API", map[string]interface{}{"url": objectURL, "payload": string(payloadJSON)})

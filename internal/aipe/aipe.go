@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/Serviceware/terraform-provider-swp/internal/authenticator"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -19,8 +20,16 @@ type AIPEClient struct {
 	// URL is the base URL for the AIPE API.
 	URL string
 
-	// OIDCToken is the OIDC token used to authenticate with the AIPE API.
-	OIDCToken string
+	// Add authenticator client to AIPEClient
+	Authenticator *authenticator.AuthenticatorClient
+}
+
+func (c *AIPEClient) GetOIDCToken(ctx context.Context) (string, error) {
+	token, err := c.Authenticator.Authenticate(ctx)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 type ObjectAPIResponse struct {
@@ -29,15 +38,17 @@ type ObjectAPIResponse struct {
 
 func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]string, error) {
 	// Make a request to the AIPE API to get the object with the specified ID.
-
 	objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s", c.URL, id)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", objectURL, nil)
-	tflog.Info(ctx, "creating request", map[string]interface{}{"url": objectURL, "err": err})
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+	token, err := c.GetOIDCToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	tflog.Info(ctx, "reading object")
 	resp, err := c.HTTPClient.Do(req)
@@ -93,7 +104,11 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+	token, err := c.GetOIDCToken(ctx)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Set("Content-Type", "application/json")
 
 	tflog.Info(ctx, "creating object", map[string]interface{}{"objectType": objectType})
@@ -142,12 +157,15 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 	if err != nil {
 		return err
 	}
-
 	req, err := http.NewRequestWithContext(ctx, "PATCH", objectURL, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+	token, err := c.GetOIDCToken(ctx)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Set("Content-Type", "application/json")
 
 	tflog.Info(ctx, "updating object", map[string]interface{}{"id": id})
@@ -177,7 +195,11 @@ func (c *AIPEClient) DeleteObject(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OIDCToken))
+	token, err := c.GetOIDCToken(ctx)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	tflog.Info(ctx, "deleting object", map[string]interface{}{"id": id})
 	resp, err := c.HTTPClient.Do(req)
