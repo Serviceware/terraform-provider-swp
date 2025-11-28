@@ -1,14 +1,11 @@
 package authenticator
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // ExpirationTime is a simple helper function that extracts the expiration
