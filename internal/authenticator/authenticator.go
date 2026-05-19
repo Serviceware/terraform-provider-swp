@@ -35,9 +35,11 @@ func (c *AuthenticatorClient) Authenticate(ctx context.Context) (string, error) 
 		return c.Token, nil
 	}
 
-	tokenUrl := fmt.Sprintf("%s/protocol/openid-connect/token", c.URL)
+	tokenUrl := fmt.Sprintf("%s/protocol/openid-connect/token", strings.TrimRight(c.URL, "/"))
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
+	form.Add("client_id", c.ApplicationUsername)
+	form.Add("client_secret", c.ApplicationPassword)
 	req, err := http.NewRequestWithContext(ctx, "POST", tokenUrl, strings.NewReader(form.Encode()))
 	tflog.Info(ctx, "creating request", map[string]interface{}{"url": tokenUrl, "err": err})
 
@@ -45,7 +47,6 @@ func (c *AuthenticatorClient) Authenticate(ctx context.Context) (string, error) 
 		return "", err
 	}
 
-	req.SetBasicAuth(c.ApplicationUsername, c.ApplicationPassword)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.Client.Do(req)
