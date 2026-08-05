@@ -24,7 +24,7 @@ type AIPEClient struct {
 }
 
 type ObjectAPIResponse struct {
-	DataObject map[string]string `json:"dataObject"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]string, error) {
@@ -61,14 +61,53 @@ func (c *AIPEClient) GetObject(ctx context.Context, id string) (map[string]strin
 	tflog.Info(ctx, "Successfully retrieved object", map[string]interface{}{"bytes": string(bodyBytes)})
 
 	var object ObjectAPIResponse
-	json.Unmarshal(bodyBytes, &object)
+	if err := json.Unmarshal(bodyBytes, &object); err != nil {
+		return nil, err
+	}
 	delete(object.DataObject, "system")
-	return object.DataObject, nil
+
+	properties := make(map[string]string, len(object.DataObject))
+	for key, value := range object.DataObject {
+		switch v := value.(type) {
+		case nil:
+			properties[key] = ""
+		case string:
+			properties[key] = v
+		default:
+			// AIPE can return non-string properties (e.g. "external-system-reference": {}
+			// on manually created objects). We can't represent those as a plain string
+			// property, so skip them instead of crashing.
+			tflog.Warn(ctx, "skipping non-string property", map[string]interface{}{"id": id, "property": key, "value": value})
+		}
+	}
+
+	return properties, nil
+}
+
+// propertiesToJSON converts a plain string property map into JSON-ready
+// values. The Terraform-facing schema only supports string properties, so
+// HCL bools (e.g. "uses-postgres = contains(...)") arrive here as the
+// strings "true"/"false". Some AIPE object types validate such properties
+// as JSON booleans, so we send them as real booleans instead of quoted
+// strings, and pass every other value through unchanged.
+func propertiesToJSON(data map[string]string) map[string]interface{} {
+	converted := make(map[string]interface{}, len(data))
+	for key, value := range data {
+		switch value {
+		case "true":
+			converted[key] = true
+		case "false":
+			converted[key] = false
+		default:
+			converted[key] = value
+		}
+	}
+	return converted
 }
 
 type ObjectCreateRequest struct {
-	Type       string            `json:"typeName"`
-	DataObject map[string]string `json:"dataObject"`
+	Type       string                 `json:"typeName"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 type ObjectCreateResponse struct {
@@ -82,7 +121,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 
 	requestObject := ObjectCreateRequest{
 		Type:       objectType,
-		DataObject: data,
+		DataObject: propertiesToJSON(data),
 	}
 	body, err := json.Marshal(requestObject)
 	if err != nil {
@@ -128,7 +167,7 @@ func (c *AIPEClient) CreateObject(ctx context.Context, objectType string, data m
 }
 
 type ObjectUpdateRequest struct {
-	DataObject map[string]string `json:"dataObject"`
+	DataObject map[string]interface{} `json:"dataObject"`
 }
 
 func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[string]string) error {
@@ -136,7 +175,7 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 	objectURL := fmt.Sprintf("%s/data/api/v1/objects/%s", c.URL, id)
 
 	requestObject := ObjectUpdateRequest{
-		DataObject: data,
+		DataObject: propertiesToJSON(data),
 	}
 	body, err := json.Marshal(requestObject)
 	if err != nil {
@@ -158,7 +197,7 @@ func (c *AIPEClient) UpdateObject(ctx context.Context, id string, data map[strin
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		respData, _ := io.ReadAll(resp.Body)
 		tflog.Info(ctx, "update object failed", map[string]interface{}{"status": resp.StatusCode, "objectURL": objectURL, "respData": string(respData)})
 		return &ApiError{StatusCode: resp.StatusCode, Message: fmt.Sprintf("unexpected status code: %d", resp.StatusCode)}
